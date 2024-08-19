@@ -14,6 +14,17 @@ instrucciones de uso en linux y ubuntu ultima version
 8. para ejecutarlo tienes que hacerlo en modo superusuario (sudo) si no, no funciona
 9. listo prueba el programa y veras que te crea otro archivo .txt con los datos recibidos. :)
 
+#clonar desde repositorio
+1. tener instalado git, sino instalarlo con sudo apt-get install git
+2. Clonar el repositorio:
+    Una vez que Git esté instalado, puedes clonar un repositorio usando el siguiente comando:
+    git clone <URL-del-repositorio>
+3. Acceder al directorio clonado:
+    Después de clonar el repositorio, puedes acceder al directorio del proyecto:
+    cd repo
+4. ahora seguir los pasos de compilacion de antes (5 - 9).
+
+
 
 Casos de usos
 El uso de keyloggers es un tema delicado debido a su potencial para violar la privacidad y ser utilizado con fines maliciosos. Sin embargo, yo solo me concentrare en los casos de usos eticos de un keylogger.
